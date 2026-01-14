@@ -11,34 +11,24 @@ const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.LANDING);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   
-  // Debug/Error State for Customer Link Issues
   const [linkError, setLinkError] = useState<string | null>(null);
   const [rawHash, setRawHash] = useState<string>('');
 
-  // Handle URL Hash for simulated routing (Customer View vs Business View)
   useEffect(() => {
-    // 1. Check for Payment Success Return (e.g. ?payment=success)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('payment') === 'success') {
-      // If user returns from payment link, go directly to Onboarding
       setView(AppView.ONBOARDING);
-      // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
       return; 
     }
 
-    // 2. Hash Routing Logic
     const handleHashChange = () => {
       const hash = window.location.hash;
       setRawHash(hash);
-      
-      // Reset error state on new hash
       setLinkError(null);
 
       if (hash.startsWith('#customer')) {
-        // Parse params from hash like #customer?name=X&industry=Y&url=Z
         try {
-          // Robust parsing: Handle cases where the hash might be encoded or malformed
           const parts = hash.split('?');
           if (parts.length < 2) {
              throw new Error("파라미터가 없습니다 (? 없음)");
@@ -59,7 +49,6 @@ const App: React.FC = () => {
             });
             setView(AppView.CUSTOMER_VIEW);
           } else {
-             // Specific missing fields
              const missing = [];
              if (!name) missing.push('상호명(name)');
              if (!industry) missing.push('업종(industry)');
@@ -69,11 +58,9 @@ const App: React.FC = () => {
         } catch (e: any) {
           console.error("Link Parsing Error:", e);
           setLinkError(e.message || "알 수 없는 오류");
-          // Do NOT redirect to landing, show error screen instead
-          setView(AppView.CUSTOMER_VIEW); // We will handle the error display inside the render block or here
+          setView(AppView.CUSTOMER_VIEW);
         }
       } else {
-        // Check if we have saved business state (in local storage for persistence)
         const saved = localStorage.getItem('easyReview_biz');
         if (saved) {
            setBusiness(JSON.parse(saved));
@@ -88,13 +75,10 @@ const App: React.FC = () => {
       }
     };
 
-    // Initial check
     handleHashChange();
-
-    // Listen for hash changes
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []); // Run once on mount
+  }, []);
 
   const handleStart = () => {
     setView(AppView.PRICING);
@@ -115,7 +99,6 @@ const App: React.FC = () => {
     setView(AppView.ONBOARDING);
   };
 
-  // ERROR VIEW (If link parsing failed)
   if (view === AppView.CUSTOMER_VIEW && linkError) {
       return (
           <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -144,7 +127,6 @@ const App: React.FC = () => {
       );
   }
 
-  // Render Logic
   if (view === AppView.CUSTOMER_VIEW && business) {
     return (
       <CustomerView 
@@ -185,7 +167,6 @@ const App: React.FC = () => {
     return <Onboarding onComplete={handleBusinessSetup} />;
   }
 
-  // Default to Landing Page
   return <LandingPage onStart={handleStart} />;
 };
 
